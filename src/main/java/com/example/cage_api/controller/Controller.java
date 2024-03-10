@@ -26,6 +26,13 @@ public class Controller {
         return userService.fingAllby();
     }
 
+    @GetMapping("/online")
+    public List<Users> getUserByStatus(@RequestBody Users user){
+        return userService.findByStatus("online");
+    }
+
+
+
     @PostMapping
     public ResponseEntity<Object> addUser(@RequestBody Users user){
         return userService.save(user);

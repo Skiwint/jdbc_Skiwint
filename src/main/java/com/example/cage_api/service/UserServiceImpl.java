@@ -8,10 +8,12 @@ import com.example.cage_api.response.ResponseHandler;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -22,10 +24,12 @@ import java.util.Map;
 
 @Service
 @AllArgsConstructor
-public class UserServiceImpl implements UserService{
+public class UserServiceImpl extends ConnectionClass implements UserService{
 
     JdbcTemplate jdbcTemplate;
+    JdbcOperations jdbcOperations;
     UserRepo userRepo;
+
 
     @Override
     public ResponseEntity<Object> save(Users user) {
@@ -43,6 +47,9 @@ public class UserServiceImpl implements UserService{
 
         return ResponseHandler.responseBuilder("searched user", HttpStatus.OK,userRepo.findById(id).get());
     }
+
+
+
 
     @Override
     public ResponseEntity<Object> updateUser(long id) {
@@ -86,7 +93,36 @@ public class UserServiceImpl implements UserService{
 
     @Override
     public List<Users> fingAllby() {
-        return jdbcTemplate.query("SELECT id, name, ser_name, email, image_url, status FROM users", this::mapRow);
+        //jdbcOperations.query("SELECT id, name, ser_name, email, image_url, status FROM users", this::mapRow);
+        //jdbcTemplate.query("SELECT id, name, ser_name, email, image_url, status FROM users", this::mapRow);
+        return jdbcOperations.query("SELECT id, name, ser_name, email, image_url, status FROM users", this::mapRow);
+    }
+
+    @Override
+    public List<Users> findByStatus(String status) {
+        String query = "SELECT * FROM users WHERE status = ?";
+        List<Users> users = new ArrayList<>();
+        try(PreparedStatement ps = connection.prepareStatement(query)){
+            ps.setString(1, status);
+
+            ResultSet resultSet = ps.executeQuery();
+
+
+            while (resultSet.next()){
+                Users user = new Users();
+                user.setId(resultSet.getInt("id"));
+                user.setName(resultSet.getString("name"));
+                user.setSerName(resultSet.getString("ser_name"));
+                user.setEmail(resultSet.getString("email"));
+                user.setImageUrl(resultSet.getString("image_url"));
+                user.setStatus(resultSet.getString("status"));
+
+                users.add(user);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return users;
     }
 
     private Users mapRow(ResultSet row, int rowNum)

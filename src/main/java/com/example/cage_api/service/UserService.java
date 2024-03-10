@@ -18,4 +18,6 @@ public interface UserService {
 
     List<Users> fingAllby();
 
+    List<Users> findByStatus(String status);
+
 }
